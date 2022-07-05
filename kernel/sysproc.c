@@ -104,5 +104,6 @@ sys_trace(void)
   if(argint(0, &mask) < 0)
     return -1;
 
+  myproc()->mask = mask;
   return 0;
 }
