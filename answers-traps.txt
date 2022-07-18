@@ -1,0 +1,15 @@
+a0, a1, a2 ... contain arguments to functions.
+
+Both in line 46. expression f(8)+1 could be calculated at compile time, which is 12.
+
+At address 0x616 (line 50).
+
+It is the address for printf to return to main, 0x30.
+
+"HE110 World"
+0x726c6400
+No need to change 57616.
+
+The value currently stored in register a2 as a signed integer,
+because a2 should be the third argument representing the second '%d'.
+
