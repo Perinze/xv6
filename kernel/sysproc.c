@@ -117,5 +117,6 @@ sys_sigreturn(void)
 {
   struct proc *p = myproc();
   memmove(p->trapframe, &p->restore, sizeof(p->restore));
+  p->handling = 0;
   return 0;
 }

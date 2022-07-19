@@ -145,6 +145,7 @@ found:
   p->alarmticks = 0;
   p->alarmhandler = 0;
   p->prevalarm = 0;
+  p->handling = 0;
   memset(&p->restore, 0, sizeof(p->restore));
 
   return p;
@@ -173,6 +174,7 @@ freeproc(struct proc *p)
   p->alarmticks = 0;
   p->alarmhandler = 0;
   p->prevalarm = 0;
+  p->handling = 0;
 }
 
 // Create a user page table for a given process,

@@ -108,5 +108,6 @@ struct proc {
   int alarmticks;              // interval to tick
   void (*alarmhandler)();      // handle alarm interrupt
   uint prevalarm;              // previous alarm tick
+  int handling;                // handler not return yet
   struct trapframe restore;    // context to restore in sigreturn
 };

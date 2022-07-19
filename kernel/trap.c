@@ -72,7 +72,7 @@ usertrap(void)
     if(which_dev == 2){
 
       // alarm enabled
-      if(p->alarmticks != 0){
+      if(p->alarmticks != 0 && !p->handling){
 
         // get current ticks
         uint xticks;
@@ -84,6 +84,7 @@ usertrap(void)
         if(xticks - p->prevalarm >= p->alarmticks){
           memmove(&p->restore, p->trapframe, sizeof(p->restore));
           p->trapframe->epc = p->alarmhandler;
+          p->handling = 1;
         }
       }
     }
