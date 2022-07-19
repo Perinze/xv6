@@ -141,6 +141,12 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // Field for sigalarm and sigreturn.
+  p->alarmticks = 0;
+  p->alarmhandler = 0;
+  p->prevalarm = 0;
+  memset(&p->restore, 0, sizeof(p->restore));
+
   return p;
 }
 
