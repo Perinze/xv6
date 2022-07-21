@@ -443,31 +443,3 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
-
-// Check page at va, copy if PTE_COW is set,
-// else return -1
-int
-copyonwrite(pagetable_t pagetable, uint64 va){
-  pte_t *pte = walk(pagetable, va, 0);
-  uint flags = PTE_FLAGS(*pte);
-  uint64 pa;
-
-  if((flags & PTE_COW) == 0){
-    panic("not cow");
-    return -1;
-  }
-
-  // copy
-  if((pa = (uint64)kalloc()) == 0){
-    panic("kalloc fail");
-    return -1;
-  }
-  uvmunmap(pagetable, va, 1, 1);
-  flags = (flags | PTE_W) & (~PTE_COW);
-  if(mappages(pagetable, va, PGSIZE, pa, flags) < 0){
-    uvmunmap(pagetable, va, 1, 1);
-    panic("cow map");
-    return -1;
-  }
-  return 0;
-}

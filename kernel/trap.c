@@ -46,10 +46,10 @@ usertrap(void)
   w_stvec((uint64)kernelvec);
 
   struct proc *p = myproc();
-
+  
   // save user program counter.
   p->trapframe->epc = r_sepc();
-
+  
   if(r_scause() == 8){
     // system call
 
@@ -68,11 +68,9 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
-    if(r_scause() != 15 || copyonwrite(p->pagetable, PGROUNDDOWN(r_stval())) < 0){
-      printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-      printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-      p->killed = 1;
-    }
+    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+    printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+    p->killed = 1;
   }
 
   if(p->killed)
