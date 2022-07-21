@@ -14,6 +14,8 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
+int pageref[PHYSTOP / 4096];
+
 struct run {
   struct run *next;
 };
