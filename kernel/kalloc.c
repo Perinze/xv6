@@ -14,7 +14,7 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
-int pageref[PHYSTOP / 4096];
+int pageref[PHYSTOP / PGSIZE];
 
 struct run {
   struct run *next;
@@ -49,9 +49,15 @@ void
 kfree(void *pa)
 {
   struct run *r;
+  uint64 i = (uint64)pa / PGSIZE;
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
+
+  // Decrease reference count
+  if(pageref[i] > 0)
+    if(--pageref[i] > 0)
+      return;
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
