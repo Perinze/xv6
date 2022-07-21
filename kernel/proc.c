@@ -32,7 +32,7 @@ struct spinlock wait_lock;
 void
 proc_mapstacks(pagetable_t kpgtbl) {
   struct proc *p;
-  
+
   for(p = proc; p < &proc[NPROC]; p++) {
     char *pa = kalloc();
     if(pa == 0)
@@ -47,7 +47,7 @@ void
 procinit(void)
 {
   struct proc *p;
-  
+
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
@@ -88,7 +88,7 @@ myproc(void) {
 int
 allocpid() {
   int pid;
-  
+
   acquire(&pid_lock);
   pid = nextpid;
   nextpid = nextpid + 1;
@@ -141,6 +141,13 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // Field for sigalarm and sigreturn.
+  p->alarmticks = 0;
+  p->alarmhandler = 0;
+  p->prevalarm = 0;
+  p->handling = 0;
+  memset(&p->restore, 0, sizeof(p->restore));
+
   return p;
 }
 
@@ -164,6 +171,10 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->alarmticks = 0;
+  p->alarmhandler = 0;
+  p->prevalarm = 0;
+  p->handling = 0;
 }
 
 // Create a user page table for a given process,
