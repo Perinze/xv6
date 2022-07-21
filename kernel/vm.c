@@ -467,4 +467,5 @@ copyonwrite(pagetable_t pagetable, uint64 va){
     panic("cow map");
     return -1;
   }
+  return 0;
 }
