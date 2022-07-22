@@ -472,7 +472,7 @@ copyonwrite(pagetable_t pagetable, uint64 va){
     return -1;
   }
 
-  printf("cow page write\n");
+  //printf("cow page write\n");
 
   // decrease ref count (original pa was refered more than once)
   pa = PTE2PA(*pte);
