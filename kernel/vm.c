@@ -152,7 +152,6 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
       return -1;
     if(*pte & PTE_V)
       ;
-      //printf("mappages: remap (ref++)\n");
       //panic("mappages: remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
     pageref[pa / PGSIZE]++;
@@ -170,7 +169,7 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
 void
 uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 {
-  uint64 a;
+  uint64 a, pa;
   pte_t *pte;
 
   if((va % PGSIZE) != 0)
@@ -183,8 +182,9 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not mapped");
     if(PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
+    pa = PTE2PA(*pte);
+    --pageref[pa / PGSIZE];
     if(do_free){
-      uint64 pa = PTE2PA(*pte);
       kfree((void*)pa);
     }
     *pte = 0;
@@ -331,7 +331,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 
     flags = (flags & (~PTE_W)) | PTE_COW;
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
-      kfree((void*)pa);
+      //kfree((void*)pa);
       goto err;
     }
   }
@@ -464,7 +464,7 @@ int
 copyonwrite(pagetable_t pagetable, uint64 va){
   pte_t *pte = walk(pagetable, va, 0);
   uint flags = PTE_FLAGS(*pte);
-  uint64 pa;
+  uint64 pa = PTE2PA(*pte);
   char *mem;
 
   if((flags & PTE_COW) == 0){
@@ -472,15 +472,10 @@ copyonwrite(pagetable_t pagetable, uint64 va){
     return -1;
   }
 
-  //printf("cow page write\n");
-
   // decrease ref count (original pa was refered more than once)
-  pa = PTE2PA(*pte);
-  kfree((void*)pa);
-  //uvmunmap(pagetable, va, 1, 0);
+  uvmunmap(pagetable, va, 1, 1);
 
   // copy page to new allocated page
-  //pa = PTE2PA(*pte);
   if((mem = kalloc()) == 0){
     panic("cow kalloc");
     return -1;
@@ -490,8 +485,7 @@ copyonwrite(pagetable_t pagetable, uint64 va){
   // change bit
   flags = (flags | PTE_W) & (~PTE_COW);
   if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) < 0){
-    kfree(mem);
-    //uvmunmap(pagetable, va, 1, 1);
+    uvmunmap(pagetable, va, 1, 1);
     panic("cow map");
     return -1;
   }
