@@ -384,8 +384,6 @@ exit(int status)
 
   release(&wait_lock);
 
-  //uvmfree(p->pagetable, 512 * PGSIZE);
-
   // Jump into the scheduler, never to return.
   sched();
   panic("zombie exit");
