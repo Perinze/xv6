@@ -51,8 +51,8 @@ procinit(void)
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
-      initlock(&p->lock, "proc");
-      p->kstack = KSTACK((int) (p - proc));
+    initlock(&p->lock, "proc");
+    p->kstack = KSTACK((int) (p - proc));
   }
 }
 
@@ -376,13 +376,15 @@ exit(int status)
 
   // Parent might be sleeping in wait().
   wakeup(p->parent);
-  
+
   acquire(&p->lock);
 
   p->xstate = status;
   p->state = ZOMBIE;
 
   release(&wait_lock);
+
+  //uvmfree(p->pagetable, 512 * PGSIZE);
 
   // Jump into the scheduler, never to return.
   sched();
@@ -450,7 +452,7 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  
+
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
