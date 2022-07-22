@@ -458,7 +458,8 @@ copyonwrite(pagetable_t pagetable, uint64 va){
   }
 
   // change bit (fake cow now)
-  uvmunmap(pagetable, va, 1, 0);
+  // note that in fake cow, no physical page will be
+  // refered to twice
 
   flags = (flags | PTE_W) & (~PTE_COW);
   pa = PTE2PA(*pte);
