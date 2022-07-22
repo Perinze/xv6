@@ -151,9 +151,11 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
     if(*pte & PTE_V)
-      pageref[pa / PGSIZE]++;
+      ;
+      //printf("mappages: remap (ref++)\n");
       //panic("mappages: remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
+    pageref[pa / PGSIZE]++;
     if(a == last)
       break;
     a += PGSIZE;
@@ -306,7 +308,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
+  //char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
@@ -321,13 +323,15 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       return 0;
     }
 
+    /*
     if((mem = kalloc()) == 0)
       goto err;
     memmove(mem, (char*)pa, PGSIZE);
+    */
 
     flags = (flags & (~PTE_W)) | PTE_COW;
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
+      kfree((void*)pa);
       goto err;
     }
   }
@@ -461,20 +465,33 @@ copyonwrite(pagetable_t pagetable, uint64 va){
   pte_t *pte = walk(pagetable, va, 0);
   uint flags = PTE_FLAGS(*pte);
   uint64 pa;
+  char *mem;
 
   if((flags & PTE_COW) == 0){
     panic("not cow");
     return -1;
   }
 
-  // change bit (fake cow now)
-  // note that in fake cow, no physical page will be
-  // refered to twice
+  printf("cow page write\n");
 
-  flags = (flags | PTE_W) & (~PTE_COW);
+  // decrease ref count (original pa was refered more than once)
   pa = PTE2PA(*pte);
-  if(mappages(pagetable, va, PGSIZE, pa, flags) < 0){
-    uvmunmap(pagetable, va, 1, 1);
+  kfree((void*)pa);
+  //uvmunmap(pagetable, va, 1, 0);
+
+  // copy page to new allocated page
+  //pa = PTE2PA(*pte);
+  if((mem = kalloc()) == 0){
+    panic("cow kalloc");
+    return -1;
+  }
+  memmove(mem, (char*)pa, PGSIZE);
+
+  // change bit
+  flags = (flags | PTE_W) & (~PTE_COW);
+  if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) < 0){
+    kfree(mem);
+    //uvmunmap(pagetable, va, 1, 1);
     panic("cow map");
     return -1;
   }
