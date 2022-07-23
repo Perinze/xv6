@@ -320,7 +320,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if((flags & PTE_W) == 0){
       if(mappages(new, i, PGSIZE, pa, flags) != 0)
         goto err;
-      return 0;
+      continue;
     }
 
     /*
