@@ -1,3 +1,0 @@
-If int copy is atomic, uptime could be made faster by sharing ticks in the read-only region.
-
-Page 0 contain the data in text and data segment. Page 2 is stack. Page 1 is guard page, cannot be read/write. Third to last page is heap, with no valid page in it, except last three pages contain trapframe and trampoline.
