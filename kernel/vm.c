@@ -329,6 +329,8 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     memmove(mem, (char*)pa, PGSIZE);
     */
 
+    *pte = ((*pte) & (~PTE_W)) | PTE_COW;
+
     flags = (flags & (~PTE_W)) | PTE_COW;
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
       //kfree((void*)pa);
@@ -470,6 +472,11 @@ copyonwrite(pagetable_t pagetable, uint64 va){
   if((flags & PTE_COW) == 0){
     panic("not cow");
     return -1;
+  }
+
+  if(pageref[pa / PGSIZE] == 1){
+    *pte = ((*pte) | PTE_W) & (~PTE_COW);
+    return 0;
   }
 
   // decrease ref count (original pa was refered more than once)
