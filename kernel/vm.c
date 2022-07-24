@@ -449,3 +449,40 @@ cow_check(pagetable_t pagetable, uint64 va)
 
   return (*pte) & PTE_COW;
 }
+
+uint64
+cow_copy(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+  uint64 pa;
+  char *mem;
+  uint flags;
+
+  if(cow_check(pagetable, va) == 0)
+    return 0;
+
+  va = PGROUNDDOWN(va);
+  pte = walk(pagetable, va, 0);
+  pa = PTE2PA(*pte);
+
+  if(get_ref(pa) == 1){
+    *pte = ((*pte) & (~PTE_COW)) | PTE_W;
+    return pa;
+  }
+
+  if((mem = kalloc()) == 0)
+    return 0;
+
+  memmove(mem, (char*)pa, PGSIZE);
+  *pte &= ~PTE_V;
+
+  flag = (PTE_FLAGS(*pte) & (~PTE_COW)) | PTE_W;
+  if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) != 0){
+    kfree(mem);
+    return 0;
+  }
+
+  kfree((char*)pa); // different
+
+  return (uint64)mem;
+}
