@@ -56,7 +56,7 @@ void
 kfree(void *pa)
 {
   struct run *r;
-  uint64 i = (uint64) / PGSIZE;
+  uint64 i = (uint64)pa / PGSIZE;
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
