@@ -464,13 +464,20 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 // else return -1
 int
 copyonwrite(pagetable_t pagetable, uint64 va){
-  pte_t *pte = walk(pagetable, va, 0);
-  uint flags = PTE_FLAGS(*pte);
-  uint64 pa = PTE2PA(*pte);
+  pte_t *pte;
+  uint flags;
+  uint64 pa;
   char *mem;
 
+  if(va >= MAXVA)
+    return -1;
+
+  pte = walk(pagetable, va, 0);
+  flags = PTE_FLAGS(*pte);
+  pa = PTE2PA(*pte);
+
   if((flags & PTE_COW) == 0){
-    panic("not cow");
+    //panic("not cow");
     return -1;
   }
 
@@ -484,7 +491,7 @@ copyonwrite(pagetable_t pagetable, uint64 va){
 
   // copy page to new allocated page
   if((mem = kalloc()) == 0){
-    panic("cow kalloc");
+    //panic("cow kalloc");
     return -1;
   }
   memmove(mem, (char*)pa, PGSIZE);
@@ -493,7 +500,7 @@ copyonwrite(pagetable_t pagetable, uint64 va){
   flags = (flags | PTE_W) & (~PTE_COW);
   if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) < 0){
     uvmunmap(pagetable, va, 1, 1);
-    panic("cow map");
+    //panic("cow map");
     return -1;
   }
   return 0;
