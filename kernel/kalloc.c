@@ -103,3 +103,36 @@ kalloc(void)
   }
   return (void*)r;
 }
+
+int
+get_ref(uint64 pa)
+{
+  uint64 i;
+  int ret;
+
+  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+    return -1;
+
+  i = pa / PGSIZE;
+  acquire(&mem_ref[i].lock);
+  ret = mem_ref[i].cnt;
+  release(&mem_ref[i].lock);
+
+  return ret;
+}
+
+int
+add_ref(uint64 pa)
+{
+  uint64 i;
+
+  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+    return -1;
+
+  i = pa / PGSIZE;
+  acquire(&mem_ref[i].lock);
+  mem_ref[i].cnt++;
+  release(&mem_ref[i].lock);
+
+  return 0;
+}
