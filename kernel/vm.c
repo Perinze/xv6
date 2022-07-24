@@ -442,7 +442,7 @@ cow_check(pagetable_t pagetable, uint64 va)
 {
   pte_t *pte;
 
-  if(va > MAXVA)
+  if(va >= MAXVA)
     return 0;
 
   if((pte = walk(pagetable, va, 0)) == 0)
@@ -486,7 +486,7 @@ cow_copy(pagetable_t pagetable, uint64 va)
     return 0;
   }
 
-  kfree((char*)pa); // different
+  kfree((char*)pa);
 
   return (uint64)mem;
 }
