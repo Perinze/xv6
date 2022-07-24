@@ -430,3 +430,22 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+// Check if page is valid and is cow page
+// return 0 for false, 1 for true
+int
+cow_check(pagetable_t pagetable, uint64 va)
+{
+  pte_t pte;
+
+  if(va > MAXVA)
+    return 0;
+
+  if((pte = walk(pagetable, va, 0)) == 0)
+    return 0;
+
+  if(((*pte) & PTE_V) == 0)
+    return 0;
+
+  return (*pte) & PTE_COW;
+}
