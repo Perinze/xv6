@@ -440,7 +440,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 int
 cow_check(pagetable_t pagetable, uint64 va)
 {
-  pte_t pte;
+  pte_t *pte;
 
   if(va > MAXVA)
     return 0;
@@ -480,7 +480,7 @@ cow_copy(pagetable_t pagetable, uint64 va)
   memmove(mem, (char*)pa, PGSIZE);
   *pte &= ~PTE_V;
 
-  flag = (PTE_FLAGS(*pte) & (~PTE_COW)) | PTE_W;
+  flags = (PTE_FLAGS(*pte) & (~PTE_COW)) | PTE_W;
   if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) != 0){
     kfree(mem);
     return 0;
