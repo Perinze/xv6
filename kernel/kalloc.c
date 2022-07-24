@@ -24,12 +24,14 @@ struct run {
 struct {
   struct spinlock lock;
   struct run *freelist;
+  //int *ref;
 } kmem;
 
 void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  //kmem.ref = (int*)pageref;
   freerange(end, (void*)PHYSTOP);
 }
 
