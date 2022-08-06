@@ -61,12 +61,12 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
-  acquire(&mem_ref[i].lock);
+  //acquire(&mem_ref[i].lock);
   if(--mem_ref[i].cnt > 0){
-    release(&mem_ref[i].lock);
+    //release(&mem_ref[i].lock);
     return;
   }
-  release(&mem_ref[i].lock);
+  //release(&mem_ref[i].lock);
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
@@ -96,9 +96,9 @@ kalloc(void)
 
   if(r){
     i = (uint64)r / PGSIZE;
-    acquire(&mem_ref[i].lock);
+    //acquire(&mem_ref[i].lock);
     mem_ref[i].cnt = 1;
-    release(&mem_ref[i].lock);
+    //release(&mem_ref[i].lock);
 
     memset((char*)r, 5, PGSIZE); // fill with junk
   }
@@ -115,9 +115,9 @@ get_ref(uint64 pa)
     return -1;
 
   i = pa / PGSIZE;
-  acquire(&mem_ref[i].lock);
+  //acquire(&mem_ref[i].lock);
   ret = mem_ref[i].cnt;
-  release(&mem_ref[i].lock);
+  //release(&mem_ref[i].lock);
 
   return ret;
 }
@@ -131,9 +131,9 @@ add_ref(uint64 pa)
     return -1;
 
   i = pa / PGSIZE;
-  acquire(&mem_ref[i].lock);
+  //acquire(&mem_ref[i].lock);
   mem_ref[i].cnt++;
-  release(&mem_ref[i].lock);
+  //release(&mem_ref[i].lock);
 
   return 0;
 }
