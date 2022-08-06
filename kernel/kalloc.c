@@ -31,8 +31,8 @@ struct mem_ref {
 void
 kinit()
 {
-  for(int i = 0; i < PHYSTOP / PGSIZE; i++)
-    initlock(&mem_ref[i].lock, "kmem_ref");
+  //for(int i = 0; i < PHYSTOP / PGSIZE; i++)
+  //  initlock(&mem_ref[i].lock, "kmem_ref");
   initlock(&kmem.lock, "kmem");
   freerange(end, (void*)PHYSTOP);
 }
