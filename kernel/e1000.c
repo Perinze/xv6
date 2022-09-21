@@ -50,7 +50,7 @@ e1000_init(uint32 *xregs)
     panic("e1000");
   regs[E1000_TDLEN] = sizeof(tx_ring);
   regs[E1000_TDH] = regs[E1000_TDT] = 0;
-  
+
   // [E1000 14.4] Receive initialization
   memset(rx_ring, 0, sizeof(rx_ring));
   for (i = 0; i < RX_RING_SIZE; i++) {
@@ -85,7 +85,7 @@ e1000_init(uint32 *xregs)
     E1000_RCTL_BAM |                 // enable broadcast
     E1000_RCTL_SZ_2048 |             // 2048-byte rx buffers
     E1000_RCTL_SECRC;                // strip CRC
-  
+
   // ask e1000 for receive interrupts.
   regs[E1000_RDTR] = 0; // interrupt after every received packet (no timer)
   regs[E1000_RADV] = 0; // interrupt after every packet (no timer)
@@ -102,7 +102,22 @@ e1000_transmit(struct mbuf *m)
   // the TX descriptor ring so that the e1000 sends it. Stash
   // a pointer so that it can be freed after sending.
   //
-  
+  printf("e1000_transmit\n");
+  int i = regs[E1000_TDT];
+  printf("%d\n", i);
+
+  if (tx_ring[i].status != E1000_TXD_STAT_DD)
+    return -1;
+  if (tx_mbufs[i] != 0)
+    mbuffree(tx_mbufs[i]);
+
+  tx_ring[i].addr = m->head;
+  tx_ring[i].length = m->len;
+  tx_ring[i].cmd = 0x8;
+
+  tx_mbufs[i] = m;
+
+  regs[E1000_TDT] = (i + 1) % TX_RING_SIZE;
   return 0;
 }
 
@@ -115,6 +130,7 @@ e1000_recv(void)
   // Check for packets that have arrived from the e1000
   // Create and deliver an mbuf for each packet (using net_rx()).
   //
+  printf("e1000_recv\n");
 }
 
 void
