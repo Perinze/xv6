@@ -12,3 +12,4 @@
 #define FSSIZE       1000  // size of file system in blocks
 #define MAXPATH      128   // maximum file path name
 #define NBUCKET      13  // number of buckets
+#define BUCKETSIZE   16   // size of a bucket
