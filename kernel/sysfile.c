@@ -286,11 +286,12 @@ create(char *path, short type, short major, short minor)
 uint64
 sys_open(void)
 {
-  char path[MAXPATH];
+  char path[MAXPATH], target[MAXPATH];
   int fd, omode;
   struct file *f;
   struct inode *ip;
   int n;
+  int depth;
 
   if((n = argstr(0, path, MAXPATH)) < 0 || argint(1, &omode) < 0)
     return -1;
@@ -313,6 +314,34 @@ sys_open(void)
       iunlockput(ip);
       end_op();
       return -1;
+    }
+    if(ip->type == T_SYMLINK && (omode & O_NOFOLLOW) == 0){
+      depth = FOLLOWTHLD;
+      while(ip->type == T_SYMLINK){
+        if(depth-- <= 0){
+          iunlockput(ip);
+          end_op();
+          return -1;
+        }
+
+        if((n = readi(ip, 0, (uint64)target, 0, sizeof(target)-1)) < 0){
+          iunlockput(ip);
+          end_op();
+          return -1;
+        }
+        target[n] = 0;
+        printf("target %s\n", target);
+        printf("length %d\n", n);
+
+        iunlockput(ip);
+
+        if((ip = namei(target)) == 0){
+          end_op();
+          return -1;
+        }
+
+        ilock(ip);
+      }
     }
   }
 
