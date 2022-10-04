@@ -59,7 +59,7 @@ testsymlink(void)
   char buf[4] = {'a', 'b', 'c', 'd'};
   char c = 0, c2 = 0;
   struct stat st;
-    
+
   printf("Start: test symlinks\n");
 
   mkdir("/testsymlink");
