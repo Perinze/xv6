@@ -393,7 +393,7 @@ sys_chdir(void)
   char path[MAXPATH];
   struct inode *ip;
   struct proc *p = myproc();
-  
+
   begin_op();
   if(argstr(0, path, MAXPATH) < 0 || (ip = namei(path)) == 0){
     end_op();
@@ -482,5 +482,34 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+  return 0;
+}
+
+// whether check for already satisfied link is necessary
+uint64
+sys_symlink(void)
+{
+  char target[MAXPATH], path[MAXPATH];
+  struct inode *ip;
+
+  if(argstr(0, target, MAXPATH) < 0)
+    return -1;
+  if(argstr(1, path, MAXPATH) < 0)
+    return -1;
+
+  begin_op();
+
+  if((ip = create(path, T_SYMLINK, 0, 0)) == 0) { // creation fail
+    end_op();
+    return -1;
+  }
+
+  if(writei(ip, 0, (uint64)target, 0, sizeof(target)) != sizeof(target))
+    panic("symlink: writei");
+
+  iunlockput(ip);
+
+  end_op();
+
   return 0;
 }
