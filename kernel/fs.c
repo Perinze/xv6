@@ -180,7 +180,7 @@ void
 iinit()
 {
   int i = 0;
-  
+
   initlock(&itable.lock, "itable");
   for(i = 0; i < NINODE; i++) {
     initsleeplock(&itable.inode[i].lock, "inode");
@@ -461,7 +461,7 @@ itrunc(struct inode *ip)
     for(j = 0; j < NINDIRECT; j++){
       if(a[j]){
         bbp = bread(ip->dev, a[j]);
-        b = (uint*)bp->data;
+        b = (uint*)bbp->data;
         for(k = 0; k < NINDIRECT; k++){
           if(b[k])
             bfree(ip->dev, b[k]);
