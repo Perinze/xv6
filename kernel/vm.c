@@ -215,7 +215,7 @@ uvmcheck(pagetable_t pagetable, uint64 va)
 
   if((mem = kalloc()) == 0)
     return -1;
-  memset(mem, 0, sizeof(mem));
+  memset(mem, 0, PGSIZE);
 
   begin_op();
   ilock(f->ip);

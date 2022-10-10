@@ -518,6 +518,7 @@ sys_mmap(void)
   filedup(f);
   vma->addr = PGROUNDUP(p->sz);
   p->sz += vma->addr - p->sz + len;
+  //p->sz += PGROUNDUP(len);
   vma->len = len;
   vma->prot = prot;
   vma->flags = flags;
@@ -530,5 +531,66 @@ sys_mmap(void)
 uint64
 sys_munmap(void)
 {
-  return -1;
+  struct vma *vma;
+  uint64 va, addr;
+  uint len;
+  struct file *f;
+  struct proc *p = myproc();
+
+  if(argaddr(0, &va) < 0 || argint(1, (int*)&len) < 0)
+    return -1;
+
+  for(vma = p->vma; vma < p->vma+NVMA; vma++)
+    if(vma->addr && vma->addr <= va && va < vma->addr + vma->len)
+      break;
+  if(vma == p->vma+NVMA)
+    return -1;
+
+  f = vma->f;
+  addr = vma->addr;
+
+   //prin tf("[0x %x, 0x%x)\n", addr, addr + vma->len);
+  if (vma->flags == MAP_SHARED){
+    //pte_t *pte;
+    //uint64 a;
+    //for(a = PGROUNDDOWN(va); a < va + len; a += PGSIZE){
+    //pte = walk(p->pagetable, a, 0);
+    //if(PTE_FLAGS(*pte) & PTE_V
+      begin_op();
+      ilock(f->ip);
+      /*
+      printf("expect len: %d\n", (int)len);
+      int sd;
+      printf("write va: 0x%x\n", (int)va);
+      if((sd = writei(f->ip, 1, va, va - addr, (int)len)) != len){
+        printf("actual len: %d\n", sd);
+        panic("munmap: iwrite");
+      }
+      */
+      writei(f->ip, 1, va, va - addr, len); // might fail, but indicates pages not written
+      iunlock(f->ip);
+      end_op();
+      //}
+  }
+
+  pte_t *pte;
+  uint64 a;
+  for(a = PGROUNDDOWN(va); a < PGROUNDDOWN(va + len); a += PGSIZE){
+    if((pte = walk(p->pagetable, a, 0)) == 0)
+      continue;
+    if(*pte & PTE_V)
+      uvmunmap(p->pagetable, a, 1, 1);
+  }
+
+  if(va == vma->addr && va+len == vma->addr + vma->len){
+    fileclose(f);
+    memset(vma, 0, sizeof(struct vma));
+  } else if(va == vma->addr){
+    vma->addr += len;
+    vma->len -= len;
+  } else {
+    vma->len -= len;
+  }
+
+  return 0;
 }
