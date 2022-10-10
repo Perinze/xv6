@@ -164,6 +164,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  memset(p->vma, 0, sizeof(p->vma));
 }
 
 // Create a user page table for a given process,

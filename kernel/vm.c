@@ -5,6 +5,11 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "file.h"
+#include "proc.h"
+#include "fcntl.h"
 
 /*
  * the kernel's page table.
@@ -184,6 +189,53 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     }
     *pte = 0;
   }
+}
+
+int
+uvmcheck(pagetable_t pagetable, uint64 va)
+{
+  struct vma *vma;
+  int prot, perm;
+  char *mem;
+  uint64 addr;
+  struct file *f;
+  struct proc *p = myproc();
+
+  if(va > MAXVA || va >= p->sz)
+    return -1;
+  va = PGROUNDDOWN(va);
+
+  for(vma = p->vma; vma < p->vma+NVMA; vma++)
+    if(vma->addr && vma->addr <= va && va < vma->addr + vma->len)
+      break;
+
+  addr = vma->addr;
+  prot = vma->prot;
+  f = vma->f;
+
+  if((mem = kalloc()) == 0)
+    return -1;
+  memset(mem, 0, sizeof(mem));
+
+  begin_op();
+  ilock(f->ip);
+  if(readi(f->ip, 0, (uint64)mem, va - addr, PGSIZE) < 0){
+    iunlock(f->ip);
+    kfree(mem);
+    return -1;
+  }
+  iunlock(f->ip);
+  end_op();
+  perm = PTE_U;
+  if(prot & PROT_READ)
+    perm |= PTE_R;
+  if(prot & PROT_WRITE)
+    perm |= PTE_W;
+  if(mappages(pagetable, va, PGSIZE, (uint64)mem, perm) < 0){
+    kfree(mem);
+    return -1;
+  }
+  return 0;
 }
 
 // create an empty user page table.
