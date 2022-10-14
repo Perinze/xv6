@@ -302,6 +302,12 @@ fork(void)
       np->ofile[i] = filedup(p->ofile[i]);
   np->cwd = idup(p->cwd);
 
+  for(i = 0; i < NVMA; i++)
+    if(p->vma[i].addr){
+      np->vma[i] = p->vma[i];
+      filedup(p->vma[i].f);
+    }
+
   safestrcpy(np->name, p->name, sizeof(p->name));
 
   pid = np->pid;
@@ -340,6 +346,7 @@ reparent(struct proc *p)
 void
 exit(int status)
 {
+  struct vma *vma;
   struct proc *p = myproc();
 
   if(p == initproc)
@@ -351,6 +358,21 @@ exit(int status)
       struct file *f = p->ofile[fd];
       fileclose(f);
       p->ofile[fd] = 0;
+    }
+  }
+
+  for(vma = p->vma; vma < p->vma+NVMA; vma++){
+    if(vma->addr){
+      pte_t *pte;
+      uint64 a;
+      for(a = PGROUNDDOWN(vma->addr); a < PGROUNDUP(vma->addr + vma->len); a += PGSIZE){
+        if((pte = walk(p->pagetable, a, 0)) == 0)
+          continue;
+        if(*pte & PTE_V)
+          uvmunmap(p->pagetable, a, 1, 1);
+      }
+      fileclose(vma->f);
+      memset(vma, 0, sizeof(struct vma));
     }
   }
 
