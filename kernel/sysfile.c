@@ -15,6 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "memlayout.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -490,7 +491,7 @@ sys_mmap(void)
 {
   uint64 addr;
   uint len, offset;
-  int prot, flags;
+  int prot, flags, i;
   struct file *f;
   struct proc *p;
   struct vma *vma;
@@ -506,20 +507,23 @@ sys_mmap(void)
     return -1;
   if(offset != 0)
     return -1;
+  if(len > VMABLOCK)
+    return -1;
 
   p = myproc();
 
-  for(vma = p->vma; vma < p->vma+NVMA; vma++)
+  for(vma = p->vma, i=1; vma < p->vma+NVMA; vma++, i++)
     if(vma->addr == 0)
       break;
   if(vma == p->vma+NVMA)
     return -1;
 
   filedup(f);
-  vma->addr = PGROUNDUP(p->sz);
-  p->sz += vma->addr - p->sz + len;
-  //p->sz += PGROUNDUP(len);
+  //vma->addr = PGROUNDUP(p->sz);
+  //p->sz += vma->addr - p->sz + len;
+  vma->addr = VMASTOP - VMABLOCK * i;
   vma->len = len;
+  printf("mmap: vma[%p, %p)\n", vma->addr, vma->addr + vma->len);
   vma->prot = prot;
   vma->flags = flags;
   vma->offset = offset;
@@ -575,7 +579,7 @@ sys_munmap(void)
 
   pte_t *pte;
   uint64 a;
-  for(a = PGROUNDDOWN(va); a < PGROUNDDOWN(va + len); a += PGSIZE){
+  for(a = PGROUNDDOWN(va); a < PGROUNDUP(va+len); a += PGSIZE){
     if((pte = walk(p->pagetable, a, 0)) == 0)
       continue;
     if(*pte & PTE_V)
