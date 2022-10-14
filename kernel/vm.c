@@ -191,6 +191,19 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
   }
 }
 
+struct vma*
+findvma(uint64 va)
+{
+  struct vma *vma;
+  struct proc *p = myproc();
+  for(vma = p->vma; vma < p->vma+NVMA; vma++)
+    if(vma->addr && vma->addr <= va && va < vma->addr + vma->len)
+      break;
+  if(vma == p->vma+NVMA)
+    return 0;
+  return vma;
+}
+
 int
 uvmcheck(pagetable_t pagetable, uint64 va)
 {
@@ -199,15 +212,15 @@ uvmcheck(pagetable_t pagetable, uint64 va)
   char *mem;
   uint64 addr;
   struct file *f;
-  struct proc *p = myproc();
+  //struct proc *p = myproc();
 
-  if(va > MAXVA || va >= p->sz)
+  if(va > MAXVA)
     return -1;
   va = PGROUNDDOWN(va);
 
-  for(vma = p->vma; vma < p->vma+NVMA; vma++)
-    if(vma->addr && vma->addr <= va && va < vma->addr + vma->len)
-      break;
+  vma = findvma(va);
+  if(vma == 0)
+    return -1;
 
   addr = vma->addr;
   prot = vma->prot;
@@ -360,8 +373,10 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
-    if((*pte & PTE_V) == 0)
+    if((*pte & PTE_V) == 0){
+      printf("not presend va: %p\n", i);
       panic("uvmcopy: page not present");
+    }
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
